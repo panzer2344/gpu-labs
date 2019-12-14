@@ -9,7 +9,8 @@
 #include "omp.h"
 #include <chrono>
 
-const unsigned int SIZE = int(1e+8);
+//const unsigned int SIZE = int(1e+8);
+const unsigned long SIZE = 100000000;
 
 using namespace std;
 using namespace chrono;
@@ -64,10 +65,10 @@ void checkd(int n, double * res1, double* res2, double *res3)
 
 void  saxpy_omp(int n, float a, float *x, float *y)
 {
-#pragma omp parallel 
-	{
-		cout << "hell" << endl;
-	}
+//#pragma omp parallel 
+//	{
+//		cout << "hell" << endl;
+//	}
 
 #pragma omp parallel for
 	for (int i = 0; i < n; i++)
@@ -95,6 +96,15 @@ void  daxpy(int n, double a, double *x, double *y)
 	for (int i = 0; i < n; i++)
 		y[i] = y[i] + a * x[i];
 	return;
+}
+
+bool log_on_error(const char* error_message, cl_int error) {
+	if (error != CL_SUCCESS) {
+		std::cout << error_message << std::endl;
+		getchar();
+		return true;
+	}
+	return false;
 }
 
 void saxpy_setting(cl_context context, cl_device_id device, cl_kernel kernel, cl_command_queue queue, cl_context context_CPU, cl_device_id device_CPU, cl_kernel kernel_CPU, cl_command_queue queue_CPU)
@@ -143,108 +153,86 @@ void saxpy_setting(cl_context context, cl_device_id device, cl_kernel kernel, cl
 
 	{
 		cl_mem inputx = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float) * SIZE, NULL, &error);
-		if (error != CL_SUCCESS) {
-			std::cout << "Create buffer failed" << std::endl;
-		}
+		if (log_on_error("Create buffer failed", error)) return;
+		
 
 		cl_mem inputy = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * SIZE, NULL, &error);
-		if (error != CL_SUCCESS) {
-			std::cout << "Create buffer failed" << std::endl;
-		}
+		if (log_on_error("Create buffer failed", error)) return;
+		
 
 		error = clEnqueueWriteBuffer(queue, inputx, CL_TRUE, 0, sizeof(float) * SIZE, x, 0, NULL, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "Write buffer failed" << std::endl;
-		}
+		if (log_on_error("Write buffer failed", error)) return;
+		
 		error = clEnqueueWriteBuffer(queue, inputy, CL_TRUE, 0, sizeof(float) * SIZE, y2, 0, NULL, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "Write buffer failed" << std::endl;
-		}
+		if (log_on_error("Write buffer failed", error)) return;
+		
 
 		error = clSetKernelArg(kernel, 0, sizeof(int), &count);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg1 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg1 kernel failed", error)) return;
+		
 		error = clSetKernelArg(kernel, 1, sizeof(float), &a);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg2 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg2 kernel failed", error)) return;
+		
 
 		error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &inputx);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg3 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg3 kernel failed", error)) return;
+		
 		error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &inputy);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg4 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg4 kernel failed", error)) return;
+		
 
 		size_t group = 0;
 		error = clGetKernelWorkGroupInfo(kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &group, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "clGetKernelWorkGroupInfo failed" << std::endl;
-		}
+		if (log_on_error("clGetKernelWorkGroupInfo failed", error)) return;
+		
 
 		std::cout << "group : " << group << std::endl;
 		group = 256;
 
 		start = clock();
 		error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &size_gpu, &group, 0, NULL, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
-		}
+		if (log_on_error("clEnqueueNDRangeKernel failed", error)) return;
+		
 		finish = clock();
 		time_sec2 = (float(finish - start) / CLOCKS_PER_SEC);
-		if (error != CL_SUCCESS) {
-			std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
-		}
+		if (log_on_error("clEnqueueNDRangeKernel failed", error)) return;
+		
 		clEnqueueReadBuffer(queue, inputy, CL_TRUE, 0, sizeof(float) * SIZE, y2, 0, NULL, NULL);
 
 	}
 
 	{
 		cl_mem inputx = clCreateBuffer(context_CPU, CL_MEM_READ_ONLY, sizeof(float) * SIZE, NULL, &error);
-		if (error != CL_SUCCESS) {
-			std::cout << "Create buffer failed" << std::endl;
-		}
+		if (log_on_error("Create buffer failed", error)) return;
+		
 
 		cl_mem inputy = clCreateBuffer(context_CPU, CL_MEM_READ_WRITE, sizeof(float) * SIZE, NULL, &error);
-		if (error != CL_SUCCESS) {
-			std::cout << "Create buffer failed" << std::endl;
-		}
+		if (log_on_error("Create buffer failed", error)) return;
+		
 
 		error = clEnqueueWriteBuffer(queue_CPU, inputx, CL_TRUE, 0, sizeof(float) * SIZE, x, 0, NULL, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "Write buffer failed" << std::endl;
-		}
+		if (log_on_error("Write buffer failed", error)) return;
+		
 		error = clEnqueueWriteBuffer(queue_CPU, inputy, CL_TRUE, 0, sizeof(float) * SIZE, y4, 0, NULL, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "Write buffer failed" << std::endl;
-		}
+		if (log_on_error("Write buffer failed", error)) return;
+		
 
 		error = clSetKernelArg(kernel_CPU, 0, sizeof(int), &count);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg1 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg1 kernel failed", error)) return;
+		
 		error = clSetKernelArg(kernel_CPU, 1, sizeof(float), &a);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg2 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg2 kernel failed", error)) return;
+
 
 		error = clSetKernelArg(kernel_CPU, 2, sizeof(cl_mem), &inputx);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg3 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg3 kernel failed", error)) return;
+
 		error = clSetKernelArg(kernel_CPU, 3, sizeof(cl_mem), &inputy);
-		if (error != CL_SUCCESS) {
-			std::cout << "set arg4 kernel failed" << std::endl;
-		}
+		if (log_on_error("set arg4 kernel failed", error)) return;
 
 		size_t group = 0;
 		error = clGetKernelWorkGroupInfo(kernel_CPU, device_CPU, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &group, NULL);
-		if (error != CL_SUCCESS) {
-			std::cout << "clGetKernelWorkGroupInfo failed" << std::endl;
-		}
+		if (log_on_error("clGetKernelWorkGroupInfo failed", error)) return;
 
 		std::cout << "group : " << group << std::endl;
 		group = 256;
@@ -256,9 +244,7 @@ void saxpy_setting(cl_context context, cl_device_id device, cl_kernel kernel, cl
 
 		error = clEnqueueNDRangeKernel(queue_CPU, kernel_CPU, 1, NULL, &size_gpu, &group, 0, NULL, NULL);
 		clFinish(queue_CPU);
-		if (error != CL_SUCCESS) {
-			std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
-		}
+		if (log_on_error("clEnqueueNDRangeKernel failed", error)) return;
 		
 		end_c = std::chrono::system_clock::now();
 		finish = clock();
@@ -267,12 +253,12 @@ void saxpy_setting(cl_context context, cl_device_id device, cl_kernel kernel, cl
 		clEnqueueReadBuffer(queue_CPU, inputy, CL_TRUE, 0, sizeof(float) * SIZE, y4, 0, NULL, NULL);
 
 		duration<double> sec = end_c - start_c;
-		cout << sec.count() << " сек." << endl;
+		//cout << sec.count() << " сек." << endl;
 
 		std::chrono::milliseconds d = std::chrono::duration_cast<std::chrono::milliseconds >(sec);
 
-		std::cout << sec.count() << "s\n";
-		std::cout << d.count() << "ms\n";
+		//std::cout << sec.count() << "s ";
+		//std::cout << d.count() << "ms\n";
 	}
 
 	checkf(count, y1, y2, y3, y4);
@@ -340,55 +326,77 @@ void daxpy_setting(cl_context context, cl_device_id device, cl_kernel kernel, cl
 	cl_mem inputx = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * SIZE, NULL, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "Create buffer failed" << std::endl;
+		getchar();
+		return;
 	}
 
 	cl_mem inputy = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * SIZE, NULL, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "Create buffer failed" << std::endl;
+		getchar();
+		return;
 	}
 
 	error = clEnqueueWriteBuffer(queue, inputx, CL_TRUE, 0, sizeof(double) * SIZE, x, 0, NULL, NULL);
 	if (error != CL_SUCCESS) {
 		std::cout << "Write buffer failed" << std::endl;
+		getchar();
+		return;
 	}
 	error = clEnqueueWriteBuffer(queue, inputy, CL_TRUE, 0, sizeof(double) * SIZE, y2, 0, NULL, NULL);
 	if (error != CL_SUCCESS) {
 		std::cout << "Write buffer failed" << std::endl;
+		getchar();
+		return;
 	}
 
-	error = clSetKernelArg(kernel, 0, sizeof(size_t), &count);
+	error = clSetKernelArg(kernel, 0, sizeof(int), &count);
 	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
+		std::cout << "set arg1 kernel failed" << std::endl;
+		getchar();
+		return;
 	}
 	error = clSetKernelArg(kernel, 1, sizeof(double), &a);
 	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
+		std::cout << "set arg2 kernel failed" << std::endl;
+		getchar();
+		return;
 	}
 
 	error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &inputx);
 	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
+		std::cout << "set arg3 kernel failed" << std::endl;
+		getchar();
+		return;
 	}
 	error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &inputy);
 	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
+		std::cout << "set arg4 kernel failed" << std::endl;
+		getchar();
+		return;
 	}
 
 	size_t group = 0;
 	error = clGetKernelWorkGroupInfo(kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &group, NULL);
 	if (error != CL_SUCCESS) {
 		std::cout << "clGetKernelWorkGroupInfo failed" << std::endl;
+		getchar();
+		return;
 	}
 
 	start = clock();
 	error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &size_gpu, &group, 0, NULL, NULL);
 	if (error != CL_SUCCESS) {
 		std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
+		getchar();
+		return;
 	}
 	finish = clock();
 	time_sec2 = (float(finish - start) / CLOCKS_PER_SEC);
 	if (error != CL_SUCCESS) {
 		std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
+		getchar();
+		return;
 	}
 	clEnqueueReadBuffer(queue, inputy, CL_TRUE, 0, sizeof(double) * SIZE, y2, 0, NULL, NULL);
 
@@ -435,6 +443,8 @@ cl_context setting_context(cl_device_type str)
 	cl_context context = clCreateContextFromType((NULL == platform) ? NULL : properties, str, NULL, NULL, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "Create context from type failed" << std::endl;
+		getchar();
+		return NULL;
 	}
 	return context;
 }
@@ -462,6 +472,8 @@ cl_device_id setting_device(cl_context context)
 	cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, 0, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "Create command queue with properties failed" << std::endl;
+		getchar();
+		return NULL;
 	}
 	return device;
 }
@@ -474,8 +486,92 @@ cl_command_queue setting_queue(cl_context context, cl_device_id device)
 	cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, 0, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "Create command queue with properties failed" << std::endl;
+		getchar();
+		return NULL;
 	}
 	return queue;
+}
+
+int init(int s) {
+	cl_int error = 0;
+
+	cl_context context_GPU = setting_context(CL_DEVICE_TYPE_GPU);
+	cl_device_id device_GPU = setting_device(context_GPU);
+	cl_command_queue queue_GPU = setting_queue(context_GPU, device_GPU);
+
+	cl_context context_CPU = setting_context(CL_DEVICE_TYPE_CPU);
+	cl_device_id device_CPU = setting_device(context_CPU);
+	cl_command_queue queue_CPU = setting_queue(context_CPU, device_CPU);
+
+	const char* filename = "C:\\Users\\Ponomarev.a.s\\source\\gpu-labs\\second.cl";
+
+	read_file(filename).data();
+	std::string str = read_file(filename);
+	const char * t_str = str.data();
+	size_t srclen[] = { str.length() };
+
+	//if(sizeof(t_str) != 0) std::cout << "Program: " << std::endl << t_str << std::endl;
+	//else std::cout << "file read null" << std::endl;
+
+	cl_program program_GPU = clCreateProgramWithSource(context_GPU, 1, &t_str, srclen, &error);
+	if (log_on_error("Create GPU program with source failed", error)) return -1;
+
+	clBuildProgram(program_GPU, 1, &device_GPU, NULL, NULL, NULL);
+
+	cl_kernel kernel1 = clCreateKernel(program_GPU, "saxpy", &error);
+	if (log_on_error("Create SAXPY_GPU kernel failed", error)) return -1;
+
+	cl_kernel kernel2 = clCreateKernel(program_GPU, "daxpy", &error);
+	if (log_on_error("Create DAXPY_GPU kernel failed", error)) return -1;
+
+
+	cl_program program_CPU = clCreateProgramWithSource(context_CPU, 1, &t_str, srclen, &error);
+	if (log_on_error("Create CPU program with source failed", error)) return -1;
+
+	clBuildProgram(program_CPU, 1, &device_CPU, NULL, NULL, NULL);
+
+	cl_kernel kernel3 = clCreateKernel(program_CPU, "saxpy", &error);
+	if (log_on_error("Create SAXPY_CPU kernel failed", error)) return -1;
+
+	cl_kernel kernel4 = clCreateKernel(program_CPU, "daxpy", &error);
+	if (log_on_error("Create DAXPY_CPU kernel failed", error)) return -1;
+	//------------------------------------------------------------------------------------------------------------------
+
+	if (s == 0) {
+		saxpy_setting(context_GPU, device_GPU, kernel1, queue_GPU, context_CPU, device_CPU, kernel3, queue_CPU);
+	}
+
+	if (s == 1) {
+		daxpy_setting(context_GPU, device_GPU, kernel2, queue_GPU);
+	}
+
+	if (s == 2) {
+		daxpy_setting(context_CPU, device_CPU, kernel4, queue_CPU);
+	}
+
+	//clFinish(queue_GPU);
+	//clFinish(queue_CPU);
+
+	//daxpy_setting(context_GPU, device_GPU, kernel2, queue_GPU);
+
+	//clFinish(queue_GPU);
+	////clFinish(queue_CPU);
+
+	//daxpy_setting(context_CPU, device_CPU, kernel4, queue_CPU);
+
+	clFinish(queue_GPU);
+	clFinish(queue_CPU);
+
+	clReleaseKernel(kernel1);
+	clReleaseKernel(kernel2);
+	clReleaseKernel(kernel3);
+	clReleaseKernel(kernel4);
+
+	clReleaseProgram(program_GPU);
+	clReleaseProgram(program_CPU);
+
+	clReleaseContext(context_GPU);
+	clReleaseContext(context_CPU);
 }
 
 int main() {
@@ -490,57 +586,54 @@ int main() {
 	cl_device_id device_CPU = setting_device(context_CPU);
 	cl_command_queue queue_CPU = setting_queue(context_CPU, device_CPU);
 
-	read_file("OpenCLFile.cl").data();
-	std::string str = read_file("OpenCLFile.cl");
+	const char* filename = "C:\\Users\\Ponomarev.a.s\\source\\gpu-labs\\second.cl";
+
+	read_file(filename).data();
+	std::string str = read_file(filename);
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
+	//if(sizeof(t_str) != 0) std::cout << "Program: " << std::endl << t_str << std::endl;
+	//else std::cout << "file read null" << std::endl;
+
 	cl_program program_GPU = clCreateProgramWithSource(context_GPU, 1, &t_str, srclen, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "Create program with source failed" << std::endl;
-	}
+	if (log_on_error("Create GPU program with source failed", error)) return -1;
 
 	clBuildProgram(program_GPU, 1, &device_GPU, NULL, NULL, NULL);
 
 	cl_kernel kernel1 = clCreateKernel(program_GPU, "saxpy", &error);
-	if (error != CL_SUCCESS) {
-		std::cout << error << std::endl;
-		std::cout << "Create kernel failed" << std::endl;
-	}
+	if (log_on_error("Create SAXPY_GPU kernel failed", error)) return -1;
 
-	//cl_kernel kernel2 = clCreateKernel(program_GPU, "daxpy", &error);
-	if (error != CL_SUCCESS) {
-		std::cout << error << std::endl;
-		std::cout << "Create kernel failed" << std::endl;
-	}
+	cl_kernel kernel2 = clCreateKernel(program_GPU, "daxpy", &error);
+	if (log_on_error("Create DAXPY_GPU kernel failed", error)) return -1;
 
 
 	cl_program program_CPU = clCreateProgramWithSource(context_CPU, 1, &t_str, srclen, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "Create program with source failed" << std::endl;
-	}
+	if (log_on_error("Create CPU program with source failed", error)) return -1;
 
 	clBuildProgram(program_CPU, 1, &device_CPU, NULL, NULL, NULL);
 
-	//cl_kernel kernel3 = clCreateKernel(program_CPU, "saxpy", &error);
-	if (error != CL_SUCCESS) {
-		std::cout << error << std::endl;
-		std::cout << "Create kernel failed" << std::endl;
-	}
+	cl_kernel kernel3 = clCreateKernel(program_CPU, "saxpy", &error);
+	if (log_on_error("Create SAXPY_CPU kernel failed", error)) return -1;
 
-	//cl_kernel kernel4 = clCreateKernel(program_CPU, "daxpy", &error);
-	if (error != CL_SUCCESS) {
-		std::cout << error << std::endl;
-		std::cout << "Create kernel failed" << std::endl;
-	}
+	cl_kernel kernel4 = clCreateKernel(program_CPU, "daxpy", &error);
+	if (log_on_error("Create DAXPY_CPU kernel failed", error)) return -1;
 	//------------------------------------------------------------------------------------------------------------------
 
 	saxpy_setting(context_GPU, device_GPU, kernel1, queue_GPU, context_CPU, device_CPU, kernel3, queue_CPU);
 
-	//daxpy_setting(context, device, kernel2, queue);
+	clFinish(queue_GPU);
+	clFinish(queue_CPU);
+
+	daxpy_setting(context_GPU, device_GPU, kernel2, queue_GPU);
 
 	clFinish(queue_GPU);
 	//clFinish(queue_CPU);
+
+	daxpy_setting(context_CPU, device_CPU, kernel4, queue_CPU);
+
+	//clFinish(queue_GPU);
+	clFinish(queue_CPU);
 
 	clReleaseProgram(program_GPU);
 	clReleaseProgram(program_CPU);
@@ -553,5 +646,10 @@ int main() {
 	clReleaseContext(context_GPU);
 	clReleaseContext(context_CPU);
 
+	//init(0);
+	//init(1);
+	//init(2);
+
+	getchar();
 	return 0;
 }
