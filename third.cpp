@@ -219,8 +219,8 @@ float opencl(int A_N, int A_M, int B_N, int B_M, float* truematrix, float* matri
 	cl_device_id device = setting_device(context);
 	cl_command_queue queue = setting_queue(context, device);
 
-	read_file("OpenCLFile.cl").data();
-	std::string str = read_file("OpenCLFile.cl");
+	read_file("third.cl").data();
+	std::string str = read_file("third.cl");
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
@@ -341,8 +341,8 @@ float opencl_image(int A_N, int A_M, int B_N, int B_M, float* truematrix, float*
 	cl_device_id device = setting_device(context);
 	cl_command_queue queue = setting_queue(context, device);
 
-	read_file("OpenCLFile.cl").data();
-	std::string str = read_file("OpenCLFile.cl");
+	read_file("third.cl").data();
+	std::string str = read_file("third.cl");
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
@@ -461,11 +461,12 @@ void calculations_setting()
 	cl_int error = 0;
 
 	// size matrix
-	int temp_temp_temp = 16;
-	int A_N = temp_temp_temp;
-	int A_M = temp_temp_temp;
+	int matrixSize = 16;
+	
+	int A_N = matrixSize;
+	int A_M = matrixSize;
+	int B_M = matrixSize;
 	int B_N = A_M;
-	int B_M = temp_temp_temp;
 	int C_N = A_N;
 	int C_M = B_M;
 
@@ -589,94 +590,7 @@ void calculations_setting()
 		std::cout << "time_ocl_gpu image: " << time_ocl_gpu_native << std::endl;
 		std::cout << "time_ocl_cpu image: " << time_ocl_cpu_native << std::endl;
 	}
-
-	/*
-	cl_mem input1 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * A_N * A_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-	std::cout << "Create buffer failed" << std::endl;
-	}
-	cl_mem input2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * B_N * B_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-	std::cout << "Create buffer failed" << std::endl;
-	}
-
-	cl_mem output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(double) * C_N *C_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-	std::cout << "Create buffer failed" << std::endl;
-	}
-
-	error = clEnqueueWriteBuffer(queue, input1, CL_TRUE, 0, sizeof(double) * A_N * A_M, matrix_ocl1, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-	std::cout << "Write buffer failed" << std::endl;
-	}
-	error = clEnqueueWriteBuffer(queue, input2, CL_TRUE, 0, sizeof(double) * B_N * B_M, matrix_ocl2, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-	std::cout << "Write buffer failed" << std::endl;
-	}
-
-	error = clSetKernelArg(kernel, 0, sizeof(int), &A_M);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 1, sizeof(int), &A_N);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 2, sizeof(int), &B_M);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &output);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 4, sizeof(cl_mem), &input1);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 5, sizeof(cl_mem), &input2);
-	if (error != CL_SUCCESS) {
-	std::cout << "set arg kernel failed" << std::endl;
-	}
-
-
-	size_t group = 0;
-	clGetKernelWorkGroupInfo(kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &group, NULL);
-
-	size_t *global = new size_t[2];
-	global[0] = size_t(A_N);
-	global[1] = size_t(B_M);
-	start = clock();
-	error = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-	cout << error << endl;
-	std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
-	}
-	clFinish(queue);
-	finish = clock();
-	time_ocl = (float(finish - start) / CLOCKS_PER_SEC);
-
-	clEnqueueReadBuffer(queue, output, CL_TRUE, 0, sizeof(double) * C_N * C_M, result_ocl, 0, NULL, NULL);
-
-
-	check(C_N, C_M, result_seq, result_ocl);
-	*/
-	/*std::cout << std::endl;
-	std::cout << std::endl;
-	//my_print(C_N, C_M, result_ocl);
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-
-	std::cout << "seq : " << time_seq << std::endl;
-	std::cout << "omp : " << time_omp << std::endl;
-	std::cout << "ocl : " << time_ocl << std::endl;
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-	*/
+	
 	//delete memory
 	delete[] matrix_seq1;
 	delete[] matrix_omp1;
@@ -692,237 +606,6 @@ void calculations_setting()
 	return;
 }
 
-/*
-void calculations_setting_image(cl_context context, cl_device_id device, cl_kernel kernel, cl_command_queue queue)
-{
-	printf("calculations setting\n");
-
-	srand(time(0));
-	cl_int error = 0;
-
-	// size matrix
-	int temp_temp_temp = 16;
-	int A_N = temp_temp_temp;
-	int A_M = temp_temp_temp;
-	int B_N = A_M;
-	int B_M = temp_temp_temp;
-	int C_N = A_N;
-	int C_M = B_M;
-
-	//time
-	clock_t start = clock();
-	clock_t finish = clock();
-	float time_seq = 0;
-	float time_omp = 0;
-	float time_ocl = 0;
-
-	//init
-	cout << "init" << endl;
-	float* matrix_seq1;
-	float* matrix_seq2;
-	float* result_seq;
-
-	float* matrix_omp1;
-	float* matrix_omp2;
-	float* result_omp;
-
-	float* matrix_ocl1;
-	float* matrix_ocl2;
-	float* result_ocl;
-	//memory
-	cout << "memory" << endl;
-
-	matrix_seq1 = new float[A_N*A_M];
-	matrix_seq2 = new float[B_N*B_M];
-	result_seq = new float[C_N*C_M];
-
-	matrix_omp1 = new float[A_N*A_M];
-	matrix_omp2 = new float[B_N*B_M];
-	result_omp = new float[C_N*C_M];
-
-	matrix_ocl1 = new float[A_N*A_M];
-	matrix_ocl2 = new float[B_N*B_M];
-	result_ocl = new float[C_N*C_M];
-	//init metrix
-	cout << "init metrix" << endl;
-	InitMatr(A_N, A_M, matrix_seq1, matrix_omp1, matrix_ocl1);
-	InitMatr(B_N, B_M, matrix_seq2, matrix_omp2, matrix_ocl2);
-
-	start = clock();
-	sequential_multiplication(A_N, A_M, B_N, B_M, matrix_seq1, matrix_seq2, result_seq);
-	//my_print(C_N, C_M, result_seq);
-	finish = clock();
-	cout << "sequential_multiplication" << endl;
-	time_seq = (float(finish - start) / CLOCKS_PER_SEC);
-
-	start = clock();
-	openmp_multiplication(A_N, A_M, B_N, B_M, matrix_omp1, matrix_omp2, result_omp);
-	cout << "openmp_multiplication" << endl;
-	finish = clock();
-	time_omp = (float(finish - start) / CLOCKS_PER_SEC);
-	cout << endl;
-	cout << endl;
-	cout << endl;
-
-	cl_mem input1 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * A_N * A_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "Create buffer failed" << std::endl;
-	}
-	cl_mem input2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(double) * B_N * B_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "Create buffer failed" << std::endl;
-	}
-
-	cl_mem output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(double) * C_N *C_M, NULL, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "Create buffer failed" << std::endl;
-	}
-
-	error = clEnqueueWriteBuffer(queue, input1, CL_TRUE, 0, sizeof(double) * A_N * A_M, matrix_ocl1, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-		std::cout << "Write buffer failed" << std::endl;
-	}
-	error = clEnqueueWriteBuffer(queue, input2, CL_TRUE, 0, sizeof(double) * B_N * B_M, matrix_ocl2, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-		std::cout << "Write buffer failed" << std::endl;
-	}
-
-	error = clSetKernelArg(kernel, 0, sizeof(int), &A_M);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 1, sizeof(int), &A_N);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 2, sizeof(int), &B_M);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &output);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 4, sizeof(cl_mem), &input1);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 5, sizeof(cl_mem), &input2);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-
-	size_t size = temp_temp_temp;
-	cl_image_format format = {};
-	format.image_channel_data_type = CL_FLOAT;
-	format.image_channel_order = CL_R;
-	cl_mem A_buf, B_buf, C_buf;
-	cl_image_desc desc = {};
-	desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-	desc.image_width = size;
-	desc.image_height = size;
-
-	cl_int cl_status;
-
-	A_buf = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-		&format, &desc, matrix_ocl1, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "clCreateImage failed1" << std::endl;
-	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
-	B_buf = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-		&format, &desc, matrix_ocl2, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "clCreateImage failed2" << std::endl;
-	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
-	C_buf = clCreateImage(context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR,
-		&format, &desc, result_ocl, &error);
-	if (error != CL_SUCCESS) {
-		std::cout << "clCreateImage failed3" << std::endl;
-	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
-
-
-	error = clSetKernelArg(kernel, 0, sizeof(int), &A_M);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 1, sizeof(int), &A_N);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 2, sizeof(int), &B_M);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &A_buf);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 4, sizeof(cl_mem), &B_buf);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-	error = clSetKernelArg(kernel, 5, sizeof(cl_mem), &C_buf);
-	if (error != CL_SUCCESS) {
-		std::cout << "set arg kernel failed" << std::endl;
-	}
-
-	size_t group = 0;
-	clGetKernelWorkGroupInfo(kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &group, NULL);
-
-	size_t *global = new size_t[2];
-	global[0] = size_t(A_N);
-	global[1] = size_t(B_M);
-	start = clock();
-	error = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
-	if (error != CL_SUCCESS) {
-		cout << error << endl;
-		std::cout << "clEnqueueNDRangeKernel failed" << std::endl;
-	}
-	clFinish(queue);
-	finish = clock();
-	time_ocl = (float(finish - start) / CLOCKS_PER_SEC);
-
-	const size_t origin[3] = { 0, 0 ,0 };
-	const size_t region[3] = { size, size, 1 };
-	cl_status = clEnqueueReadImage(queue, C_buf, true, origin, region, 0, 0, result_ocl, 0, nullptr, nullptr);
-
-
-	//check(C_N, C_M, result_seq, result_ocl);
-	my_print(temp_temp_temp, temp_temp_temp, result_ocl);
-	std::cout << std::endl;
-	std::cout << std::endl;
-	//my_print(C_N, C_M, result_ocl);
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-
-	std::cout << "seq : " << time_seq << std::endl;
-	std::cout << "omp : " << time_omp << std::endl;
-	std::cout << "ocl : " << time_ocl << std::endl;
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-
-	//delete memory
-	delete[] matrix_seq1;
-	delete[] matrix_omp1;
-	delete[] matrix_seq2;
-	delete[] matrix_omp2;
-	delete[] result_seq;
-	delete[] result_omp;
-
-	delete[] matrix_ocl1;
-	delete[] matrix_ocl2;
-	delete[] result_ocl;
-
-	return;
-}
-*/
 
 
 
@@ -935,8 +618,8 @@ int main() {
 	cl_device_id device_GPU = setting_device(context_GPU);
 	cl_command_queue queue_GPU = setting_queue(context_GPU, device_GPU);
 
-	read_file("OpenCLFile.cl").data();
-	std::string str = read_file("OpenCLFile.cl");
+	read_file("third.cl").data();
+	std::string str = read_file("third.cl");
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
