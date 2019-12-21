@@ -9,8 +9,7 @@
 #include "omp.h"
 #include <chrono>
 
-//const unsigned int SIZE = int(1e+8);
-const unsigned long SIZE = 100000000;
+const unsigned int SIZE = int(1e+8);
 
 using namespace std;
 using namespace chrono;
@@ -586,7 +585,7 @@ int main() {
 	cl_device_id device_CPU = setting_device(context_CPU);
 	cl_command_queue queue_CPU = setting_queue(context_CPU, device_CPU);
 
-	const char* filename = "C:\\Users\\Ponomarev.a.s\\source\\gpu-labs\\second.cl";
+	const char* filename = "C:\\Users\\Ponomarev.a.s\\source\\repos\\gpu-labs\\second.cl";
 
 	read_file(filename).data();
 	std::string str = read_file(filename);
@@ -627,12 +626,15 @@ int main() {
 
 	daxpy_setting(context_GPU, device_GPU, kernel2, queue_GPU);
 
-	clFinish(queue_GPU);
+	//clFinish(queue_GPU);
 	//clFinish(queue_CPU);
 
 	daxpy_setting(context_CPU, device_CPU, kernel4, queue_CPU);
 
 	//clFinish(queue_GPU);
+	//clFinish(queue_CPU);
+
+	clFinish(queue_GPU);
 	clFinish(queue_CPU);
 
 	clReleaseProgram(program_GPU);

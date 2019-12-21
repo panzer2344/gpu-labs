@@ -11,6 +11,8 @@
 #include <algorithm> 
 using namespace std;
 
+const char* filename = "C:\\Users\\Ponomarev.a.s\\source\\repos\\gpu-labs\\third.cl";
+
 std::string read_file(const std::string & path) {
 	return std::string(
 		(std::istreambuf_iterator<char>(
@@ -105,7 +107,7 @@ bool is_equal(float x, float y) {
 	return std::fabs(x - y) < std::numeric_limits<float>::epsilon();
 }
 
-void check(int n, int m, float* matrix1, float* matrix2)
+void check(int n, int m, float* matrix1, float* matrix2, const char* callPoint)
 {
 	int err = 0;
 
@@ -113,12 +115,17 @@ void check(int n, int m, float* matrix1, float* matrix2)
 		for (int j = 0; j < m; j++)
 			if (!is_equal(matrix1[i*m + j], matrix2[i*m + j]))
 			{
-				printf("matrix1  %f, matrix2  %f, index  %d \n", matrix1[i*m + j], matrix2[i*m + j], i*m + j);
+				printf("matrix1  %f, matrix2  %f, index  %d, %s \n", matrix1[i*m + j], matrix2[i*m + j], i*m + j, callPoint);
 				err++;
 			}
-	if(err != 0)
-		cout << "number of errors =  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << err << endl;
+	if (err != 0)
+		cout << "number of errors = " << err << endl;
 	return;
+}
+
+void check(int n, int m, float* matrix1, float* matrix2)
+{
+	check(n, m, matrix1, matrix2, "");
 }
 
 void my_print(int n, int m, float* matrix1)
@@ -172,28 +179,6 @@ void openmp_multiplication(int A_N, int A_M, int B_N, int B_M, float* matrix1, f
 			}
 			result[i*B_M + j] = temp;
 		}
-	return;
-}
-
-
-void openmp_multiplication_opt(int A_N, int A_M, int B_N, int B_M, float* matrix1, float* matrix2, float* result)
-{
-	int BLOCK_SIZE = 16;
-#pragma omp parallel for num_threads(1)
-	for (int jj = 0; jj < B_M; jj += BLOCK_SIZE) {
-		for (int kk = 0; kk < A_M; kk += BLOCK_SIZE) {
-			for (int i = 0; i < A_N; i++) {
-				for (int j = jj; j < std::min(A_N, jj + BLOCK_SIZE); j++) {
-					float acc = 0.0f;
-					for (int k = kk; k < std::min(A_N, kk + BLOCK_SIZE); k++) {
-						acc += matrix1[i * A_N + k] * matrix1[k * A_M + j];
-					}
-					result[i * A_N + j] = acc;
-				}
-			}
-		}
-	}
-	return;
 }
 
 
@@ -219,8 +204,8 @@ float opencl(int A_N, int A_M, int B_N, int B_M, float* truematrix, float* matri
 	cl_device_id device = setting_device(context);
 	cl_command_queue queue = setting_queue(context, device);
 
-	read_file("third.cl").data();
-	std::string str = read_file("third.cl");
+	//read_file("third.cl").data();
+	std::string str = read_file(filename);
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
@@ -317,8 +302,6 @@ float opencl(int A_N, int A_M, int B_N, int B_M, float* truematrix, float* matri
 	if (error != CL_SUCCESS) {
 		std::cout << "clEnqueueReadBuffer failed" << std::endl;
 	}
-	//my_print(C_N, C_M, result_ocl);
-	check(C_N, C_M, truematrix, result_ocl);
 
 	return time_ocl;
 }
@@ -333,16 +316,14 @@ float opencl_image(int A_N, int A_M, int B_N, int B_M, float* truematrix, float*
 
 	int C_N = A_N;
 	int C_M = B_M;
-	//my_print(C_N, C_M, matrix_ocl2);
-	//cout << str_device << endl;
+
 	cl_int error = 0;
 
 	cl_context context = setting_context(str_device);
 	cl_device_id device = setting_device(context);
 	cl_command_queue queue = setting_queue(context, device);
 
-	read_file("third.cl").data();
-	std::string str = read_file("third.cl");
+	std::string str = read_file(filename);
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
@@ -376,24 +357,21 @@ float opencl_image(int A_N, int A_M, int B_N, int B_M, float* truematrix, float*
 
 	cl_int cl_status;
 
-	A_buf = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+	A_buf = clCreateImage(context, CL_MEM_READ_ONLY,
 		&format, &desc, matrix_ocl1, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "clCreateImage failed1" << std::endl;
 	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
-	B_buf = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+	B_buf = clCreateImage(context, CL_MEM_READ_ONLY,
 		&format, &desc, matrix_ocl2, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "clCreateImage failed2" << std::endl;
 	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
-	C_buf = clCreateImage(context, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR,
+	C_buf = clCreateImage(context, CL_MEM_READ_WRITE,
 		&format, &desc, result_ocl, &error);
 	if (error != CL_SUCCESS) {
 		std::cout << "clCreateImage failed3" << std::endl;
 	}
-	//check_error(cl_status, "clCreateImage", __LINE__);
 
 
 	error = clSetKernelArg(kernel, 0, sizeof(int), &A_N);
@@ -447,8 +425,6 @@ float opencl_image(int A_N, int A_M, int B_N, int B_M, float* truematrix, float*
 	const size_t origin[3] = { 0, 0 ,0 };
 	const size_t region[3] = { size, size, 1 };
 	cl_status = clEnqueueReadImage(queue, C_buf, true, origin, region, 0, 0, result_ocl, 0, nullptr, nullptr);
-	//my_print(C_N, C_M, result_ocl);
-	check(C_N, C_M, truematrix, result_ocl);
 
 	return time_ocl;
 }
@@ -509,26 +485,25 @@ void calculations_setting()
 	matrix_ocl1 = new float[A_N*A_M];
 	matrix_ocl2 = new float[B_N*B_M];
 	result_ocl = new float[C_N*C_M];
-	//init metrix
+	
 	cout << "init metrix" << endl;
 	InitMatr(A_N, A_M, matrix_seq1, matrix_omp1, matrix_ocl1);
 	InitMatr(B_N, B_M, matrix_seq2, matrix_omp2, matrix_ocl2);
 
 	start = clock();
 	sequential_multiplication(A_N, A_M, B_N, B_M, matrix_seq1, matrix_seq2, result_seq);
-	//my_print(C_N, C_M, matrix_seq1);
 	finish = clock();
 	cout << "sequential_multiplication" << endl;
 	cout << endl;
 	time_seq = (float(finish - start) / CLOCKS_PER_SEC);
 
 	start = clock();
-	openmp_multiplication_opt(A_N, A_M, B_N, B_M, matrix_omp1, matrix_omp2, result_omp);
+	openmp_multiplication(A_N, A_M, B_N, B_M, matrix_omp1, matrix_omp2, result_omp);
 	finish = clock();
 	cout << "openmp_multiplication" << endl;
 	cout << endl;
 	time_omp = (float(finish - start) / CLOCKS_PER_SEC);
-	check(C_N, C_M, result_seq, result_omp);
+	check(C_N, C_M, result_seq, result_omp, "openmp mult opt");
 
 	cout << endl;
 	std::cout << "seq : " << time_seq << std::endl;
@@ -536,53 +511,51 @@ void calculations_setting()
 	cout << endl;
 
 
-	int change = 2;
-	if (change == 2)
+	int change = 4;
+	if (change >= 2)
 	{
 		cout << " calculation native" << endl;
 
 		time_ocl_gpu_native = opencl(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_GPU, "mult");
-		check(C_N, C_M, result_seq, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "native-mult for opencl-gpu");
 
 		time_ocl_cpu_native = opencl(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_CPU, "mult");
-		check(C_N, C_M, result_seq, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "native-mult for opencl-cpu");
 
 
 		cout << endl;
-		cout << "time native :" << endl;
+		cout << "time native " << endl;
 
 		std::cout << "time_ocl_gpu native: " << time_ocl_gpu_native << std::endl;
 		std::cout << "time_ocl_cpu native: " << time_ocl_cpu_native << std::endl;
 		cout << endl;
 
 	}
-	if (change == 2)
+	if (change >= 3)
 	{
 		cout << " calculation opt" << endl;
 
 		time_ocl_gpu_native = opencl(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_GPU, "mult_opt");
-		check(C_N, C_M, result_seq, result_ocl);
-		//my_print(C_N, C_M, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "opt-mult for opencl-cpu");
 
 		time_ocl_cpu_native = opencl(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_CPU, "mult_opt");
-		check(C_N, C_M, result_seq, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "opt-mult for opencl-cpu");
 
 		cout << endl;
-		cout << "time opt :" << endl;
+		cout << "time opt " << endl;
 		std::cout << "time_ocl_gpu opt: " << time_ocl_gpu_native << std::endl;
 		std::cout << "time_ocl_cpu opt: " << time_ocl_cpu_native << std::endl;
 		cout << endl;
 
 	}
-	if (change == 2)
+	if (change >= 4)
 	{
 		cout << " calculation image" << endl;
 
 		time_ocl_gpu_native = opencl_image(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_GPU, "matmul_block_image");
-		check(C_N, C_M, result_seq, result_ocl);
-		//my_print(C_N, C_M, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "image-mult for opencl-cpu");
 		time_ocl_cpu_native = opencl_image(A_N, A_M, B_N, B_M, result_seq, matrix_ocl1, matrix_ocl2, result_ocl, CL_DEVICE_TYPE_CPU, "matmul_block_image");
-		check(C_N, C_M, result_seq, result_ocl);
+		check(C_N, C_M, result_seq, result_ocl, "image-mult for opencl-cpu");
 
 
 		cout << endl;
@@ -618,8 +591,9 @@ int main() {
 	cl_device_id device_GPU = setting_device(context_GPU);
 	cl_command_queue queue_GPU = setting_queue(context_GPU, device_GPU);
 
-	read_file("third.cl").data();
-	std::string str = read_file("third.cl");
+
+	//read_file("third.cl").data();
+	std::string str = read_file(filename);
 	const char * t_str = str.data();
 	size_t srclen[] = { str.length() };
 
@@ -652,6 +626,8 @@ int main() {
 	clReleaseProgram(program_GPU);
 	clReleaseKernel(kernel1);
 	clReleaseContext(context_GPU);
+
+	getchar();
 
 	return 0;
 }
